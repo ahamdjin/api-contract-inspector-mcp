@@ -21,4 +21,4 @@ jobs:
       - name: Initialize and call actual containerized server
         env:
           TEST_DOCKER_MCP: '1'
-        run: python -m unittest tests.test_docker -v
+        run: python -m unittest discover -s tests -p test_docker.py -v
