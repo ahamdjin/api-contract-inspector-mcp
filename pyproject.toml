@@ -1,0 +1,25 @@
+[build-system]
+requires = ["setuptools>=75", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "api-contract-inspector-mcp"
+version = "0.1.0"
+description = "Read-only MCP tools for OpenAPI change and compatibility analysis using oasdiff"
+readme = "README.md"
+requires-python = ">=3.11"
+license = "MIT"
+authors = [{name = "Ahmad Yar"}]
+keywords = ["mcp", "openapi", "api", "breaking-changes", "contract-testing", "oasdiff"]
+dependencies = ["mcp>=1.0,<3"]
+
+[project.urls]
+Homepage = "https://www.ahmadyar.co/"
+Source = "https://github.com/ahamdjin/api-contract-inspector-mcp"
+Documentation = "https://github.com/ahamdjin/api-contract-inspector-mcp#readme"
+
+[project.scripts]
+api-contract-inspector-mcp = "api_contract_inspector.server:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
