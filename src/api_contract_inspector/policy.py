@@ -12,6 +12,8 @@ MAX_FINDINGS = 1200
 def review_policy(changes: list[dict], *, accepted_rules: list[str] | None = None) -> dict:
     if not isinstance(changes,list) or len(changes)>MAX_FINDINGS:
         raise ValueError("Expected up to 1,200 structured compatibility findings.")
+    if accepted_rules is not None and not isinstance(accepted_rules,list):
+        raise ValueError("Accepted rule IDs must be a list.")
     accepted=set(accepted_rules or [])
     if len(accepted)>100 or any(not isinstance(rule,str) or not rule or len(rule)>120 for rule in accepted):
         raise ValueError("Invalid accepted rules; maximum 100 named rule IDs.")
