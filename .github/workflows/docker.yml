@@ -1,0 +1,24 @@
+name: Docker MCP installation
+on:
+  push:
+    branches: [main]
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  container-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install stdio MCP client dependencies
+        run: python -m pip install -e .
+      - name: Build self-contained local MCP image
+        run: docker build --tag api-contract-inspector-mcp:ci .
+      - name: Initialize and call actual containerized server
+        env:
+          TEST_DOCKER_MCP: '1'
+        run: python -m unittest tests.test_docker -v
