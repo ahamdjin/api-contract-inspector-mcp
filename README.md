@@ -1,52 +1,80 @@
 # API Contract Inspector MCP
 
-**An open-source, read-only MCP server for OpenAPI contract reviews.** By [Ahmad Yar](https://www.ahmadyar.co/).
+**Turn OpenAPI breaking-change reports into actionable release decisions.** A read-only local MCP server by [Ahmad Yar](https://www.ahmadyar.co/), built on [oasdiff](https://github.com/oasdiff/oasdiff) (Apache-2.0).
 
-Uses the upstream [oasdiff](https://github.com/oasdiff/oasdiff) CLI (Apache-2.0) to detect contract changes and potentially breaking API changes. We contribute MCP tool APIs, bounded inputs, safe subprocess invocation, and human-readable outputs — not a second compatibility engine.
+This is **not** a replacement for oasdiff's official MCP server. That server already supports raw breaking reports, changelogs, diffs and validation. API Contract Inspector adds a focused **release policy gate** with explicit human-reviewed exceptions, plus migration planning prompts that agents can use during a release review.
 
-## Install for local development
+## Install
 
-Requires Python 3.11+ and an **independently installed** [oasdiff CLI](https://www.oasdiff.com/docs/getting-started) on PATH.
+### Option A — Docker (includes pinned oasdiff)
 
-    python -m pip install -e .
-    python -m unittest discover -s tests -v
-    api-contract-inspector-mcp
+```sh
+docker build -t api-contract-inspector-mcp .
+```
 
-The final command runs an MCP **stdio server**, so it will sit quietly waiting for a client instead of printing a web address. Try it with MCP Inspector or an MCP-compatible client.
+Example Cursor/Claude-style config:
 
-Example MCP client configuration:
-
-    {
-      "mcpServers": {
-        "api-contract-inspector": {
-          "command": "api-contract-inspector-mcp",
-          "args": []
-        }
-      }
+```json
+{
+  "mcpServers": {
+    "api-contract-inspector": {
+      "command": "docker",
+      "args": ["run", "-i", "--rm", "--network=none", "--read-only", "--tmpfs", "/tmp:rw,nosuid,nodev,size=32m", "api-contract-inspector-mcp"]
     }
+  }
+}
+```
 
-Ensure the Python console script and oasdiff executable are on the client application's PATH. `OASDIFF_BIN` can point to a locally installed oasdiff executable.
+The server communicates using **stdio**. Networking is disabled in the example Docker command, and the only writable directory is a small temporary filesystem.
 
-## Available MCP tools
+### Option B — Python + oasdiff CLI
 
-- `compare_openapi_contracts(baseline, revision)`: Markdown changelog for OpenAPI JSON/YAML documents.
-- `detect_breaking_api_changes(baseline, revision)`: potential breaking changes.
-- `about_contract_inspector()`: scopes and limitations.
+Requires Python 3.11+, a compatible MCP Python SDK (installed by the package), and [oasdiff](https://www.oasdiff.com/docs/getting-started) available on PATH.
 
-Pass *complete OpenAPI document text*, not repository paths, URLs, or credentials. Both specs are limited to 250 KB; execution times out after 12 seconds. Remote references are explicitly disabled using `--allow-external-refs=false`.
+```sh
+go install github.com/oasdiff/oasdiff@v1.34.0
+python -m pip install -e .
+python -m unittest discover -s tests -v
+api-contract-inspector-mcp
+```
 
-## Limitations and safety
+For clients, configure `command: "api-contract-inspector-mcp"` and `args: []`, with both Python console script and oasdiff available on PATH. `OASDIFF_BIN` may specify the installed oasdiff executable.
 
-- Static comparison does not verify that a live service or all clients work correctly.
-- Local `$ref` and incomplete specs may need dereferencing before comparison. Remote fetching is disabled to prevent SSRF.
-- This server never fetches external URLs, executes workflow definitions, or modifies API contracts.
-- Do not paste proprietary or secret-bearing contracts into untrusted MCP clients or server hosts.
-- Unit tests cover input validation and command construction. **A real MCP-host end-to-end test and integration tests using the installed oasdiff binary remain pending** before public directory submission.
+## MCP tools
 
-## License and upstream
+| Tool | When to use |
+| --- | --- |
+| `compare_openapi_contracts(baseline, revision)` | Complete human-readable consumer changelog |
+| `detect_breaking_api_changes(baseline, revision)` | Direct Markdown breaking-change report |
+| `assess_api_release(baseline, revision, accepted_rule_ids?)` | Structured release gate with rule counts, findings and human-approved exceptions |
+| `draft_api_migration_checklist(baseline, revision)` | Suggested migration and contract-test tasks from actual engine findings |
+| `about_contract_inspector()` | Explain capabilities and safety limits |
 
-Original MCP wrapper © 2026 Ahmad Yar, MIT. **oasdiff** is developed independently by its contributors and distributed separately under Apache-2.0. Its rights and attributions remain with those authors. Not affiliated with oasdiff maintainers.
+**Example use:** "Compare these two self-contained OpenAPI documents. Show blockers, group them by endpoint, and draft a release checklist. Treat no exceptions as approved."
 
-Companion project: [SchemaDiff Studio](https://github.com/ahamdjin/schemadiff-studio), the visual contract-change workbench.
+The policy tool defaults to blocking on any **unaccepted finding** emitted by `oasdiff breaking --format json`. It permits an optional list of accepted **rule IDs**, which must be supplied by a **human**. This is not an automatic approval system or a guarantee that accepted rules are safe for all users.
 
-**Status:** Runnable source MVP; not yet a verified published MCP server.
+## Safety and limitations
+
+- Input: two **complete inline** OpenAPI JSON/YAML documents, up to **250 KB each**.
+- Uses a bounded subprocess (12-second timeout, limited output, no `shell=True`) and independently installed/pinned oasdiff.
+- No URL fetching, no network tool calls, no remote reference resolution; never modifies contracts, runs code from specs or deploys a service.
+- Specs are written to a temporary directory for the CLI and deleted after analysis.
+- Static contract findings are **not** a test of deployed APIs, SDK behavior, client compatibility or runtime correctness.
+- Migration checklists are suggestions and require human verification.
+- Don't supply credentials or confidential specs to untrusted client hosts.
+- This project's stdio server is designed for **local clients**; it does not host a public Streamable HTTP endpoint.
+
+## Verification
+
+```sh
+python -m unittest discover -s tests -v
+```
+
+GitHub Actions installs a pinned oasdiff binary, runs a **real removed-endpoint comparison**, initializes this MCP server through a true stdio MCP client, discovers its tools and invokes the release gate. These are release gates, not just unit mocks.
+
+## License and attribution
+
+Original MCP wrapper, release policy and checklists © 2026 Ahmad Yar (MIT). [oasdiff](https://github.com/oasdiff/oasdiff) is an independent upstream Apache-2.0 project distributed separately. Neither project is affiliated with the other.
+
+**Submission target:** [Glama MCP server directory](https://glama.ai/mcp/servers) (repository URL: `https://github.com/ahamdjin/api-contract-inspector-mcp`). Submission and indexing are separate manual steps and have not been completed.
