@@ -57,7 +57,7 @@ def inspect(base: str, revision: str, mode: str = "changelog", *,
         except FileNotFoundError as exc:
             raise InspectionError("oasdiff is not installed. Install it and add it to PATH.") from exc
         except subprocess.TimeoutExpired as exc:
-            raise InspectionError("Analysis exceeded the 12-second safety limit.") from exc
+            raise InspectionError("Analysis exceeded the 12-second time limit.") from exc
         if result.returncode not in (0,1):
             raise InspectionError("oasdiff could not parse or compare these contracts. Check syntax and references.")
         output=result.stdout.strip()
