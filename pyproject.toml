@@ -4,14 +4,14 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "api-contract-inspector-mcp"
-version = "0.1.0"
+version = "0.2.0"
 description = "Read-only MCP tools for OpenAPI change and compatibility analysis using oasdiff"
 readme = "README.md"
 requires-python = ">=3.11"
 license = "MIT"
 authors = [{name = "Ahmad Yar"}]
 keywords = ["mcp", "openapi", "api", "breaking-changes", "contract-testing", "oasdiff"]
-dependencies = ["mcp>=1.0,<3"]
+dependencies = ["mcp>=1.12,<2"]
 
 [project.urls]
 Homepage = "https://www.ahmadyar.co/"
