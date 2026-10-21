@@ -1,4 +1,4 @@
-FROM golang:1.25 AS oasdiff-build
+FROM golang:1.26 AS oasdiff-build
 RUN go install github.com/oasdiff/oasdiff@v1.34.0
 
 FROM python:3.12-slim
